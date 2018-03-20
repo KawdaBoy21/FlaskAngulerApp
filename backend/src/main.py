@@ -1,5 +1,5 @@
-from .entities import Session, engine, Base
-from .exam import Exam
+from .entities.entity import Session, engine, Base
+from .entities.exams import Exam
 
 # generate database schema
 Base.metadata.create_all(engine)
