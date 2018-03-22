@@ -9,23 +9,24 @@ Base.metadata.create_all(engine)
 # creating Flask app
 app = Flask(__name__)
 
+sess = Session()
 # check for existing data
-# exams = session.query(Exam).all()
-#
-# if len(exams) == 0:
-#     # create and persist dummy exam
-#     python_exam = Exam("SQLAlchemy Exam", "Test your knowledge about SQLAlchemy.", "script")
-#     session.add(python_exam)
-#     session.commit()
-#     session.close()
-#
-#     # reload exams
-#     exams = session.query(Exam).all()
+exams = sess.query(Exam).all()
+
+if len(exams) == 0:
+    # create and persist dummy exam
+    python_exam = Exam("SQLAlchemy Exam", "Test your knowledge about SQLAlchemy.", "script")
+    sess.add(python_exam)
+    sess.commit()
+    sess.close()
+
+    # reload exams
+    exams = sess.query(Exam).all()
 
 # show existing exams
-# print('### Exams:')
-# for exam in exams:
-#     print(f'({exam.id}) {exam.title} - {exam.description}')
+print('### Exams:')
+for exam in exams:
+    print(f'({exam.id}) {exam.title} - {exam.description}')
 
 
 @app.route('/exams')
