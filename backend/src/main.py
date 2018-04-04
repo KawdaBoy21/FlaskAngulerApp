@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, request, jsonify
 from .entities.entity import Session, engine, Base
 from .entities.exams import Exam, ExamSchema
 from flask_cors import CORS
@@ -13,9 +13,9 @@ app = Flask(__name__)
 CORS(app)
 
 # sess = Session()
-# # check for existing data
+# check for existing data
 # exams = sess.query(Exam).all()
-#
+
 # if len(exams) == 0:
 #     # create and persist dummy exam
 #     python_exam = Exam("SQLAlchemy Exam", "Test your knowledge about SQLAlchemy.", "script")
