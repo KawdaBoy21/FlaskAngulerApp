@@ -4,7 +4,8 @@ from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
 
-AUTH0_DOMAIN = 'theekshana.auth0.com'
+
+AUTH0_DOMAIN = 'bk-samples.auth0.com'
 ALGORITHMS = ['RS256']
 API_AUDIENCE = 'https://online-exam.digituz.com.br'
 
@@ -16,29 +17,30 @@ class AuthError(Exception):
 
 
 def get_token_auth_header():
+    """Obtains the Access Token from the Authorization Header
+    """
     auth = request.headers.get('Authorization', None)
-
     if not auth:
         raise AuthError({
-            'code':'Authorization header missing',
-            'description':'Authorization header is expected'
+            'code': 'authorization_header_missing',
+            'description': 'Authorization header is expected.'
         }, 401)
 
     parts = auth.split()
 
-    if parts[0].lower() !='bearer':
+    if parts[0].lower() != 'bearer':
         raise AuthError({
-            'code':'invalid_header',
-            'description':'Authorization header must start with "Bearer".'
+            'code': 'invalid_header',
+            'description': 'Authorization header must start with "Bearer".'
         }, 401)
 
     elif len(parts) == 1:
         raise AuthError({
-            'code':'invalid_header',
-            'description':'Token not found.'
+            'code': 'invalid_header',
+            'description': 'Token not found.'
         }, 401)
 
-    elif len(parts)>2:
+    elif len(parts) > 2:
         raise AuthError({
             'code': 'invalid_header',
             'description': 'Authorization header must be bearer token.'
@@ -49,14 +51,16 @@ def get_token_auth_header():
 
 
 def requires_auth(f):
+    """Determines if the Access Token is valid
+    """
+
     @wraps(f)
     def decorated(*args, **kwargs):
         token = get_token_auth_header()
         jsonurl = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
-        jwks = json.load(jsonurl.read())
+        jwks = json.loads(jsonurl.read())
         unverified_header = jwt.get_unverified_header(token)
-        rsa_key={}
-
+        rsa_key = {}
         for key in jwks['keys']:
             if key['kid'] == unverified_header['kid']:
                 rsa_key = {
@@ -66,32 +70,39 @@ def requires_auth(f):
                     'n': key['n'],
                     'e': key['e']
                 }
-            if rsa_key:
-                try:
-                    payload=jwt.decode(
-                        token,
-                        rsa_key,
-                        algotithms=ALGORITHMS,
-                        audience=API_AUDIENCE,
-                        issuer='https://'+AUTH0_DOMAIN+'/'
-                    )
-                except jwt.ExpiredSignatureError:
-                    raise AuthError({
-                        'code': 'token_expired',
-                        'description': 'Token expired.'
-                    }, 401)
+        if rsa_key:
+            try:
+                payload = jwt.decode(
+                    token,
+                    rsa_key,
+                    algorithms=ALGORITHMS,
+                    audience=API_AUDIENCE,
+                    issuer='https://' + AUTH0_DOMAIN + '/'
+                )
 
-                except jwt.JWTClaimsError:
-                    raise AuthError({
-                        'code': 'invalid_claims',
-                        'description': 'Incorrect claims. Please, check the audience and issuer.'
-                    }, 400)
+            except jwt.ExpiredSignatureError:
+                raise AuthError({
+                    'code': 'token_expired',
+                    'description': 'Token expired.'
+                }, 401)
 
-                _request_ctx_stack.top.current_user = payload
-                return f(*args, **kwargs)
+            except jwt.JWTClaimsError:
+                raise AuthError({
+                    'code': 'invalid_claims',
+                    'description': 'Incorrect claims. Please, check the audience and issuer.'
+                }, 401)
+            except Exception:
+                raise AuthError({
+                    'code': 'invalid_header',
+                    'description': 'Unable to parse authentication token.'
+                }, 400)
+
+            _request_ctx_stack.top.current_user = payload
+            return f(*args, **kwargs)
 
         raise AuthError({
             'code': 'invalid_header',
             'description': 'Unable to find the appropriate key.'
         }, 400)
+
     return decorated
